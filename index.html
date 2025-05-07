@@ -76,6 +76,7 @@
             margin-bottom: 10px;
             border-bottom: 1px solid #eee; /* Separator line */
             padding-bottom: 10px;
+            cursor: pointer; /* Indicate image is clickable */
         }
 
         .product-info {
@@ -175,11 +176,13 @@
             align-items: center;
             opacity: 0; /* Start hidden for transition */
             transition: opacity 0.3s ease-in-out;
-            cursor: pointer; /* Indicate the overlay is clickable to close */
+            pointer-events: none; /* Allow clicks to pass through when hidden */
         }
 
-        /* Note: The opacity: 1 is added via JavaScript to trigger the transition */
-
+        .modal-overlay.visible {
+            opacity: 1;
+            pointer-events: auto; /* Enable clicks when visible */
+        }
 
         .modal-content {
             position: relative;
@@ -190,13 +193,13 @@
             max-height: 90%; /* Max height of the modal box */
             box-shadow: 0 4px 15px rgba(0,0,0,0.3); /* Stronger shadow for modal */
             overflow: hidden; /* Ensure image doesn't overflow */
-            /* Add a slight transform for a subtle entry animation if desired */
-            /* transform: scale(0.95); */
-            /* transition: transform 0.3s ease-in-out; */
+            transform: scale(0.95);
+            transition: transform 0.3s ease-in-out;
         }
 
-        /* transform: scale(1); */ /* Added via JS usually */
-
+        .modal-overlay.visible .modal-content {
+            transform: scale(1); /* Scale to normal size when visible */
+        }
 
         .modal-image {
             display: block;
@@ -204,9 +207,87 @@
             max-height: 80vh; /* Limit height based on viewport height */
             object-fit: contain; /* Ensure the whole image is visible */
             margin: auto; /* Center the image horizontally */
-            /* cursor: default; */ /* Optional: Change cursor back to default on the image itself */
         }
 
+        /* Promotional Popup Styles */
+        .promo-modal-overlay {
+            position: fixed;
+            z-index: 1010; /* Higher than the zoom modal */
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            opacity: 0;
+            visibility: hidden; /* Use visibility for initial state */
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+        }
+
+        .promo-modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .promo-modal-content {
+            position: relative;
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            max-width: 400px; /* Control the size of the popup */
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+            transform: scale(0.9); /* Start slightly smaller for effect */
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .promo-modal-overlay.visible .promo-modal-content {
+            transform: scale(1); /* Scale to normal size when visible */
+        }
+
+        .promo-modal-close {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #aaa;
+            cursor: pointer;
+            transition: color 0.2s ease;
+        }
+
+        .promo-modal-close:hover {
+            color: #777;
+        }
+
+        .promo-modal-image {
+            width: 100%;
+            max-height: 200px; /* Limit image height in popup */
+            object-fit: contain;
+            margin-bottom: 15px;
+        }
+
+        .promo-modal-content h3 {
+            margin-top: 0;
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .promo-modal-content p {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .promo-modal-price {
+            font-size: 22px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 20px;
+        }
 
         /* Adjustments for smaller screens */
         @media (max-width: 600px) {
@@ -237,13 +318,12 @@
                 margin-bottom: 3px;
             }
 
-             .product-description {
+            .product-description {
                 font-size: 10px; /* Smaller font size for description */
                 margin: 0 0 8px 0; /* Adjust margin */
                 min-height: 40px; /* Adjust height */
                 -webkit-line-clamp: 4; /* Maybe allow slightly more lines on small screens */
             }
-
 
             .product-price {
                 font-size: 16px; /* Adjust font size */
@@ -268,12 +348,21 @@
                 margin-bottom: 15px;
             }
 
-             .modal-content {
+            .modal-content {
                 padding: 15px; /* Reduce modal padding on small screens */
             }
 
             .modal-image {
                 max-height: 70vh; /* Further limit image height on small screens */
+            }
+
+            .promo-modal-content {
+                padding: 20px;
+                max-width: 90%; /* Allow popup to take more width on small screens */
+            }
+
+            .promo-modal-image {
+                max-height: 150px; /* Adjust popup image height */
             }
         }
     </style>
@@ -292,7 +381,6 @@
         </section>
     </main>
 
-
     <div class="credits-area">
         <p>Programador SA:MP Freitas Scripter</p>
         <p>Criação, edição e manutenção de servidores SA:MP</p>
@@ -300,6 +388,28 @@
     <footer>
         <p>&copy; 2023 Freitas Scripter. Todos os direitos reservados.</p>
     </footer>
+
+    <!-- Image Zoom Modal -->
+    <div class="modal-overlay" id="imageZoomModal">
+        <div class="modal-content">
+            <img src="" alt="Zoomed product image" class="modal-image" id="zoomedImage">
+        </div>
+    </div>
+
+    <!-- Promotional Popup Modal -->
+    <div class="promo-modal-overlay" id="promoModal">
+        <div class="promo-modal-content">
+            <span class="promo-modal-close">&times;</span>
+            <img src="/digital_product_1.png" alt="Gamemode Facções" class="promo-modal-image">
+            <h3>Gamemode Facções</h3>
+            <p>Script de gamemode focado em sistema de facções.</p>
+            <div class="promo-modal-price">R$ 65,00</div>
+            <a href="https://wa.me/5517992095122?text=<?php echo urlencode('Olá! Tenho interesse no produto: Gamemode Facções'); ?>" class="buy-button" target="_blank" rel="noopener noreferrer">
+                Comprar Agora
+            </a>
+        </div>
+    </div>
+
     <script type="module">
         // Product data
         const products = [
@@ -308,81 +418,79 @@
                 name: "Anti Cheat",
                 description: "Um sistema anti-cheat robusto para seu servidor.",
                 price: 15.00,
-                image: "6.png"
+                image: "/digital_product_6.png" // Updated image path
             },
             {
                 id: 2,
                 name: "Gamemode Facções",
                 description: "Script de gamemode focado em sistema de facções.",
                 price: 65.00,
-                image: "1.png"
+                image: "/digital_product_1.png" // Updated image path
             },
             {
                 id: 3,
                 name: "Gamemode RP #1",
                 description: "Primeira versão do gamemode de Roleplay.",
                 price: 40.00,
-                image: "4.png"
+                image: "/digital_product_4.png" // Updated image path
             },
             {
                 id: 4,
                 name: "Gamemode RP #2",
                 description: "Segunda versão do gamemode focado em PvP.",
                 price: 30.00,
-                image: "5.png"
+                image: "/digital_product_5.png" // Updated image path
             },
             {
                 id: 5,
                 name: "Criar Armas",
                 description: "Criacao de armas para orgs ou para todos.",
                 price: 25.00,
-                image: "criararma.png"
+                image: "/digital_product_2.png" // Using another digital product image
             },
             {
                 id: 6,
                 name: "Celular Textdraw",
                 description: "Sistema de celular baseado em textdraw para gamemodes.",
                 price: 25.00,
-                image: "celular.png"
+                image: "/digital_product_3.png" // Using another digital product image
             },
             {
                 id: 7,
                 name: "Velocímetro",
                 description: "Sistema de velocímetro customizado para seu gamemode.",
                 price: 22.00,
-                image: "2.png" // Reusing image 1 for simplicity
+                image: "/digital_product_1.png" // Reusing digital product image
             }
         ];
 
-        // Script to load products
-        document.addEventListener('DOMContentLoaded', () => {
-            console.log('DOM fully loaded and parsed. Loading products...'); // Debugging log
+        const whatsappNumber = '5517992095122'; // Replace with the actual WhatsApp number
+
+        // Function to load products into the grid
+        const loadProducts = () => {
+            console.log('Loading products...');
             const productListSection = document.querySelector('.product-list');
-            const whatsappNumber = '5517992095122'; // Replace with the actual WhatsApp number
 
             if (!productListSection) {
-                console.error('Error: Could not find the .product-list section in the DOM.'); // Debugging log
-                // Display a message if the container is not found
-                document.body.innerHTML = '<h1>Error: Could not load product list section.</h1><p>Please check the page structure.</p>' + document.body.innerHTML;
-                return; // Stop if the container isn't found
+                console.error('Error: Could not find the .product-list section.');
+                document.body.innerHTML = '<h1>Error: Could not load product list section.</h1><p>Please check the page structure.</p>';
+                return;
             }
 
             if (!products || products.length === 0) {
-                console.warn('Warning: No products found.'); // Debugging log
-                productListSection.innerHTML = '<p>No products available at this time.</p>'; // Display message if no products
-                console.log('Displayed "No products available" message.'); // Debugging log
-                return; // Stop if products array is empty
+                console.warn('Warning: No products found.');
+                productListSection.innerHTML = '<p>No products available at this time.</p>';
+                return;
             }
 
-            productListSection.innerHTML = ''; // Clear the container before adding products
+            productListSection.innerHTML = ''; // Clear container
 
-            console.log(`Found ${products.length} products. Rendering...`); // Debugging log
+            console.log(`Found ${products.length} products. Rendering...`);
 
             products.forEach(product => {
                 const productElement = document.createElement('div');
                 productElement.classList.add('product-item');
 
-                // Add description and add click listener to image for zoom
                 productElement.innerHTML = `
                     <img src="${product.image}" alt="${product.name}" class="product-image">
                     <div class="product-info">
@@ -395,57 +503,73 @@
                     </div>
                 `;
 
-                const productImage = productElement.querySelector('.product-image');
                 // Add click listener for image zoom
+                const productImage = productElement.querySelector('.product-image');
                 productImage.addEventListener('click', () => {
-                    console.log('Image clicked, attempting to open modal.'); // Debugging log
-                    // Create modal overlay
-                    const modalOverlay = document.createElement('div');
-                    modalOverlay.classList.add('modal-overlay');
-
-                    // Create modal content box
-                    const modalContent = document.createElement('div');
-                    modalContent.classList.add('modal-content');
-
-                    // Create zoomed image
-                    const zoomedImage = document.createElement('img');
-                    zoomedImage.classList.add('modal-image');
-                    zoomedImage.src = productImage.src;
-                    zoomedImage.alt = productImage.alt;
-
-                    // Assemble modal
-                    modalContent.appendChild(zoomedImage);
-                    modalOverlay.appendChild(modalContent);
-                    document.body.appendChild(modalOverlay);
-
-                    // Trigger reflow to enable transition
-                    requestAnimationFrame(() => {
-                         console.log('Adding opacity to modal.'); // Debugging log
-                        modalOverlay.style.opacity = '1';
-                    });
-
-
-                    // Add event listener to close the modal when clicking the overlay
-                    modalOverlay.addEventListener('click', () => {
-                         console.log('Overlay clicked, closing modal.'); // Debugging log
-                        modalOverlay.style.opacity = '0';
-                        modalOverlay.addEventListener('transitionend', () => {
-                            modalOverlay.remove();
-                             console.log('Modal removed after transition.'); // Debugging log
-                        }, { once: true });
-                    });
-
-                    // Prevent closing when clicking the image inside the modal
-                    zoomedImage.addEventListener('click', (event) => {
-                        event.stopPropagation();
-                        console.log('Zoomed image clicked, stopping propagation.'); // Debugging log
-                    });
+                    showImageZoomModal(product.image, product.name);
                 });
-
 
                 productListSection.appendChild(productElement);
             });
-            console.log('Finished rendering products.'); // Debugging log
+            console.log('Finished rendering products.');
+        };
+
+        // --- Image Zoom Modal Logic ---
+        const imageZoomModal = document.getElementById('imageZoomModal');
+        const zoomedImage = document.getElementById('zoomedImage');
+
+        const showImageZoomModal = (imageUrl, imageAlt) => {
+            zoomedImage.src = imageUrl;
+            zoomedImage.alt = imageAlt;
+            imageZoomModal.classList.add('visible');
+        };
+
+        // Close image zoom modal by clicking the overlay
+        imageZoomModal.addEventListener('click', () => {
+            imageZoomModal.classList.remove('visible');
+        });
+
+        // Prevent closing image zoom modal when clicking the image itself
+        imageZoomModal.querySelector('.modal-content').addEventListener('click', (event) => {
+            event.stopPropagation();
+        });
+
+        // --- Promotional Popup Logic ---
+        const promoModal = document.getElementById('promoModal');
+        const promoModalCloseButton = promoModal.querySelector('.promo-modal-close');
+
+        const showPromoModal = () => {
+            console.log('Showing promotional popup.');
+            promoModal.classList.add('visible');
+        };
+
+        const hidePromoModal = () => {
+            console.log('Hiding promotional popup.');
+            promoModal.classList.remove('visible');
+        };
+
+        // Close promo modal by clicking the 'X'
+        promoModalCloseButton.addEventListener('click', hidePromoModal);
+
+        // Close promo modal by clicking the overlay (outside the content)
+        promoModal.addEventListener('click', (event) => {
+            // Check if the click target is the overlay itself, not the content box
+            if (event.target === promoModal) {
+                hidePromoModal();
+            }
+        });
+
+        // Prevent closing promo modal when clicking the content itself
+        promoModal.querySelector('.promo-modal-content').addEventListener('click', (event) => {
+            event.stopPropagation();
+        });
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('DOM fully loaded.');
+            loadProducts();
+            // Delay showing the popup slightly, or show it immediately
+            setTimeout(showPromoModal, 1000); // Show after 1 second
         });
     </script>
 </body>
